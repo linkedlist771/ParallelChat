@@ -1,7 +1,7 @@
 # ParallelChat
 
 <p align="center">
-  <img src="public/logo.svg" alt="ParallelChat Logo" width="128" height="128">
+  <img src="public/logo.png" alt="ParallelChat Logo" width="128" height="128">
 </p>
 
 <p align="center">
@@ -9,14 +9,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/nicklin99/ParallelChat/releases">
-    <img src="https://img.shields.io/github/v/release/nicklin99/ParallelChat" alt="GitHub Release">
+  <a href="https://github.com/linkedlist771/ParallelChat/releases">
+    <img src="https://img.shields.io/github/v/release/linkedlist771/ParallelChat" alt="GitHub Release">
   </a>
-  <a href="https://github.com/nicklin99/ParallelChat/actions/workflows/release.yml">
-    <img src="https://github.com/nicklin99/ParallelChat/actions/workflows/release.yml/badge.svg" alt="Build Status">
+  <a href="https://github.com/linkedlist771/ParallelChat/actions/workflows/release.yml">
+    <img src="https://github.com/linkedlist771/ParallelChat/actions/workflows/release.yml/badge.svg" alt="Build Status">
   </a>
-  <a href="https://github.com/nicklin99/ParallelChat/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/nicklin99/ParallelChat" alt="License">
+  <a href="https://github.com/linkedlist771/ParallelChat/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/linkedlist771/ParallelChat" alt="License">
   </a>
 </p>
 
@@ -40,7 +40,7 @@
 
 ## 📥 下载安装
 
-前往 [Releases 页面](https://github.com/nicklin99/ParallelChat/releases) 下载最新版本：
+前往 [Releases 页面](https://github.com/linkedlist771/ParallelChat/releases) 下载最新版本：
 
 | 平台 | 下载文件 |
 |------|----------|
