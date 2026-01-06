@@ -22,6 +22,12 @@
 
 ---
 
+
+
+https://github.com/user-attachments/assets/d16f9320-1974-4518-9442-4683176bb9d3
+
+
+
 ## ✨ 功能特点
 
 - 🖥️ **多平台并行** - 同时显示 ChatGPT、Claude、Gemini、Grok 等多个 AI 平台
@@ -32,21 +38,13 @@
 - 💾 **会话保存** - 保存当前会话状态，随时恢复
 - 🔐 **登录持久化** - 各平台登录状态独立保存，无需重复登录
 
-## 📸 截图预览
 
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/placeholder.png" alt="Screenshot" width="800">
-</p>
 
 ## 📥 下载安装
 
 前往 [Releases 页面](https://github.com/linkedlist771/ParallelChat/releases) 下载最新版本：
 
-| 平台 | 下载文件 |
-|------|----------|
-| Windows | `ParallelChat-Windows-x.x.x-Setup.exe` |
-| macOS | `ParallelChat-Mac-x.x.x-Installer.dmg` |
-| Linux | `ParallelChat-Linux-x.x.x.AppImage` |
+
 
 ### macOS 用户注意
 
@@ -68,9 +66,6 @@ xattr -cr ~/Downloads/ParallelChat.app
 
 然后就可以正常打开了。
 
-> 💡 如果上述方法无效，也可以尝试：
-> 1. 打开 **系统设置** → **隐私与安全性**
-> 2. 在下方找到被阻止的应用，点击 **仍要打开**
 
 ## 🚀 使用方法
 
