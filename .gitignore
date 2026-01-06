@@ -24,7 +24,6 @@ release
 *.sln
 *.sw?
 
-# lockfile
-package-lock.json
+# lockfile (keep package-lock.json for CI/CD)
 pnpm-lock.yaml
 yarn.lock
