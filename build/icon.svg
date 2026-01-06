@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="100%" style="stop-color:#764ba2"/>
+    </linearGradient>
+    <linearGradient id="panel1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10a37f"/>
+      <stop offset="100%" style="stop-color:#0d8a6a"/>
+    </linearGradient>
+    <linearGradient id="panel2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4285f4"/>
+      <stop offset="100%" style="stop-color:#3367d6"/>
+    </linearGradient>
+    <linearGradient id="panel3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#d97706"/>
+      <stop offset="100%" style="stop-color:#b45309"/>
+    </linearGradient>
+    <linearGradient id="panel4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1da1f2"/>
+      <stop offset="100%" style="stop-color:#0c85d0"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="200" fill="url(#bg)"/>
+  
+  <!-- Four panels representing multiple AI chats -->
+  <!-- Top Left - ChatGPT green -->
+  <rect x="120" y="120" width="360" height="360" rx="40" fill="url(#panel1)"/>
+  <circle cx="300" cy="240" r="50" fill="white" opacity="0.9"/>
+  <rect x="200" y="320" width="200" height="24" rx="12" fill="white" opacity="0.6"/>
+  <rect x="200" y="370" width="140" height="24" rx="12" fill="white" opacity="0.4"/>
+  
+  <!-- Top Right - Gemini blue -->
+  <rect x="544" y="120" width="360" height="360" rx="40" fill="url(#panel2)"/>
+  <circle cx="724" cy="240" r="50" fill="white" opacity="0.9"/>
+  <rect x="624" y="320" width="200" height="24" rx="12" fill="white" opacity="0.6"/>
+  <rect x="624" y="370" width="140" height="24" rx="12" fill="white" opacity="0.4"/>
+  
+  <!-- Bottom Left - Claude orange -->
+  <rect x="120" y="544" width="360" height="360" rx="40" fill="url(#panel3)"/>
+  <circle cx="300" cy="664" r="50" fill="white" opacity="0.9"/>
+  <rect x="200" y="744" width="200" height="24" rx="12" fill="white" opacity="0.6"/>
+  <rect x="200" y="794" width="140" height="24" rx="12" fill="white" opacity="0.4"/>
+  
+  <!-- Bottom Right - Grok blue -->
+  <rect x="544" y="544" width="360" height="360" rx="40" fill="url(#panel4)"/>
+  <circle cx="724" cy="664" r="50" fill="white" opacity="0.9"/>
+  <rect x="624" y="744" width="200" height="24" rx="12" fill="white" opacity="0.6"/>
+  <rect x="624" y="794" width="140" height="24" rx="12" fill="white" opacity="0.4"/>
+  
+  <!-- Connection lines representing parallel communication -->
+  <line x1="480" y1="300" x2="544" y2="300" stroke="white" stroke-width="8" stroke-linecap="round" opacity="0.5"/>
+  <line x1="300" y1="480" x2="300" y2="544" stroke="white" stroke-width="8" stroke-linecap="round" opacity="0.5"/>
+  <line x1="724" y1="480" x2="724" y2="544" stroke="white" stroke-width="8" stroke-linecap="round" opacity="0.5"/>
+  <line x1="480" y1="724" x2="544" y2="724" stroke="white" stroke-width="8" stroke-linecap="round" opacity="0.5"/>
+</svg>
+
