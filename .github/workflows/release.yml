@@ -51,6 +51,7 @@ jobs:
     needs: check-version
     if: needs.check-version.outputs.version_changed == 'true'
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
@@ -88,6 +89,7 @@ jobs:
             release/**/*.AppImage
             release/**/*.zip
           if-no-files-found: warn
+          retention-days: 1
 
   release:
     needs: [check-version, build]
@@ -107,7 +109,7 @@ jobs:
       - name: List artifacts
         run: |
           echo "Downloaded artifacts:"
-          find artifacts -type f -name "*" | head -50
+          find artifacts -type f -name "*" 2>/dev/null | head -50 || echo "No artifacts found"
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -134,4 +136,3 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
