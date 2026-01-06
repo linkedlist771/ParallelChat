@@ -1,79 +1,87 @@
-# electron-vite-vue
+# ParallelChat
 
-🥳 Really simple `Electron` + `Vue` + `Vite` boilerplate.
+> Chat with multiple AI platforms simultaneously in one window.
 
-<!-- [![awesome-vite](https://awesome.re/mentioned-badge.svg)](https://github.com/vitejs/awesome-vite) -->
-<!-- [![Netlify Status](https://api.netlify.com/api/v1/badges/ae3863e3-1aec-4eb1-8f9f-1890af56929d/deploy-status)](https://app.netlify.com/sites/electron-vite/deploys) -->
-<!-- [![GitHub license](https://img.shields.io/github/license/caoxiemeihao/electron-vite-vue)](https://github.com/electron-vite/electron-vite-vue/blob/main/LICENSE) -->
-<!-- [![GitHub stars](https://img.shields.io/github/stars/caoxiemeihao/electron-vite-vue?color=fa6470)](https://github.com/electron-vite/electron-vite-vue) -->
-<!-- [![GitHub forks](https://img.shields.io/github/forks/caoxiemeihao/electron-vite-vue)](https://github.com/electron-vite/electron-vite-vue) -->
-[![GitHub Build](https://github.com/electron-vite/electron-vite-vue/actions/workflows/build.yml/badge.svg)](https://github.com/electron-vite/electron-vite-vue/actions/workflows/build.yml)
-[![GitHub Discord](https://img.shields.io/badge/chat-discord-blue?logo=discord)](https://discord.gg/sRqjYpEAUK)
+[![GitHub Release](https://img.shields.io/github/v/release/dingli/ParallelChat)](https://github.com/dingli/ParallelChat/releases)
+[![GitHub Build](https://github.com/dingli/ParallelChat/actions/workflows/release.yml/badge.svg)](https://github.com/dingli/ParallelChat/actions/workflows/release.yml)
+[![GitHub License](https://img.shields.io/github/license/dingli/ParallelChat)](https://github.com/dingli/ParallelChat/blob/main/LICENSE)
 
 ## Features
 
-📦 Out of the box  
-🎯 Based on the official [template-vue-ts](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-vue-ts), less invasive  
-🌱 Extensible, really simple directory structure  
-💪 Support using Node.js API in Electron-Renderer  
-🔩 Support C/C++ native addons  
-🖥 It's easy to implement multiple windows  
+- **Multi-Platform Support**: ChatGPT, Claude, Gemini, Grok and more AI platforms in one window
+- **Flexible Layouts**: Multiple preset layouts (2x2 grid, horizontal split, vertical split, etc.)
+- **Custom Layouts**: Create your own layout with resizable panels
+- **Unified Input**: Send the same message to all AI platforms at once
+- **Panel Maximize**: Double-click to maximize any panel for detailed viewing
 
-## Quick Setup
+## Screenshots
 
-```sh
-# clone the project
-git clone https://github.com/electron-vite/electron-vite-vue.git
+<!-- Add your screenshots here -->
 
-# enter the project directory
-cd electron-vite-vue
+## Download
 
-# install dependency
+Download the latest version from [Releases](https://github.com/dingli/ParallelChat/releases):
+
+| Platform | Download |
+|----------|----------|
+| Windows | `.exe` installer |
+| macOS | `.dmg` file |
+| Linux | `.AppImage` file |
+
+## Development
+
+### Prerequisites
+
+- Node.js 18+
+- npm
+
+### Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/dingli/ParallelChat.git
+
+# Enter the project directory
+cd ParallelChat
+
+# Install dependencies
 npm install
 
-# develop
+# Start development server
 npm run dev
 ```
 
-## Debug
+### Build
 
-![electron-vite-react-debug.gif](https://github.com/electron-vite/electron-vite-react/blob/main/electron-vite-react-debug.gif?raw=true)
-
-## Directory
-
-```diff
-+ ├─┬ electron
-+ │ ├─┬ main
-+ │ │ └── index.ts    entry of Electron-Main
-+ │ └─┬ preload
-+ │   └── index.ts    entry of Preload-Scripts
-  ├─┬ src
-  │ └── main.ts       entry of Electron-Renderer
-  ├── index.html
-  ├── package.json
-  └── vite.config.ts
+```bash
+# Build for current platform
+npm run build
 ```
 
-<!--
-## Be aware
+## Tech Stack
 
-🚨 By default, this template integrates Node.js in the Renderer process. If you don't need it, you just remove the option below. [Because it will modify the default config of Vite](https://github.com/electron-vite/vite-plugin-electron-renderer#config-presets-opinionated).
+- **Framework**: Electron + Vue 3 + Vite
+- **Language**: TypeScript
+- **UI**: Custom components with CSS
 
-```diff
-# vite.config.ts
+## Project Structure
 
-export default {
-  plugins: [
--   // Use Node.js API in the Renderer-process
--   renderer({
--     nodeIntegration: true,
--   }),
-  ],
-}
 ```
--->
+├── electron/
+│   ├── main/         # Electron main process
+│   └── preload/      # Preload scripts
+├── src/
+│   ├── components/   # Vue components
+│   ├── utils/        # Utility functions
+│   └── App.vue       # Main application
+├── public/           # Static assets
+└── package.json
+```
 
-## FAQ
+## Contributing
 
-- [C/C++ addons, Node.js modules - Pre-Bundling](https://github.com/electron-vite/vite-plugin-electron-renderer#dependency-pre-bundling)
-- [dependencies vs devDependencies](https://github.com/electron-vite/vite-plugin-electron-renderer#dependencies-vs-devdependencies)
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+[MIT](LICENSE)

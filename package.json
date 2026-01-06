@@ -1,18 +1,25 @@
 {
-  "name": "electron-vue-vite",
-  "version": "28.1.0",
+  "name": "parallel-chat",
+  "version": "1.0.0",
   "main": "dist-electron/main/index.js",
-  "description": "Really simple Electron + Vue + Vite boilerplate.",
-  "author": "草鞋没号 <308487730@qq.com>",
+  "description": "Chat with multiple AI platforms simultaneously - ChatGPT, Claude, Gemini, Grok and more in one window.",
+  "author": "dingli",
   "license": "MIT",
   "private": true,
   "keywords": [
+    "ai",
+    "chatgpt",
+    "claude",
+    "gemini",
+    "grok",
+    "parallel-chat",
     "electron",
-    "rollup",
-    "vite",
-    "vue3",
-    "vue"
+    "vue3"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dingli/ParallelChat"
+  },
   "debug": {
     "env": {
       "VITE_DEV_SERVER_URL": "http://127.0.0.1:3344/"
