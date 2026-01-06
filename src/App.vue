@@ -63,6 +63,7 @@ const slotCount = computed(() => {
       return 2
     case 'three-top2-bottom1':
     case 'three-top1-bottom2':
+    case 'three-vertical':
       return 3
     case 'four-grid':
       return 4
@@ -666,6 +667,12 @@ function getCustomPanelStyle(index: number) {
 .layout-four-grid {
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
+}
+
+/* 竖三排布局 */
+.layout-three-vertical {
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr;
 }
 
 .grid-item {

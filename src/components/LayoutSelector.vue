@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import type { CustomLayoutConfig } from './ResizableLayout.vue'
 
 // 预设布局类型
-export type PresetLayoutType = 'two-horizontal' | 'two-vertical' | 'three-top2-bottom1' | 'three-top1-bottom2' | 'four-grid'
+export type PresetLayoutType = 'two-horizontal' | 'two-vertical' | 'three-top2-bottom1' | 'three-top1-bottom2' | 'three-vertical' | 'four-grid'
 
 // 布局类型可以是预设或自定义ID
 export type LayoutType = PresetLayoutType | string
@@ -25,6 +25,7 @@ const presetLayouts: { type: PresetLayoutType; name: string }[] = [
   { type: 'two-vertical', name: '上下二分' },
   { type: 'three-top2-bottom1', name: '上二下一' },
   { type: 'three-top1-bottom2', name: '上一下二' },
+  { type: 'three-vertical', name: '竖三排' },
   { type: 'four-grid', name: '四分格' },
 ]
 
@@ -122,6 +123,13 @@ function getCustomLayoutIcon(config: CustomLayoutConfig) {
           <rect x="13" y="1" width="10" height="7" rx="1" fill="currentColor" opacity="0.8"/>
           <rect x="1" y="10" width="10" height="7" rx="1" fill="currentColor" opacity="0.8"/>
           <rect x="13" y="10" width="10" height="7" rx="1" fill="currentColor" opacity="0.8"/>
+        </svg>
+
+        <!-- 竖三排 -->
+        <svg v-else-if="layout.type === 'three-vertical'" width="24" height="18" viewBox="0 0 24 18">
+          <rect x="1" y="1" width="6.5" height="16" rx="1" fill="currentColor" opacity="0.8"/>
+          <rect x="8.75" y="1" width="6.5" height="16" rx="1" fill="currentColor" opacity="0.8"/>
+          <rect x="16.5" y="1" width="6.5" height="16" rx="1" fill="currentColor" opacity="0.8"/>
         </svg>
       </button>
 

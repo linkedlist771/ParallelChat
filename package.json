@@ -1,6 +1,6 @@
 {
   "name": "parallel-chat",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "main": "dist-electron/main/index.js",
   "description": "Chat with multiple AI platforms simultaneously - ChatGPT, Claude, Gemini, Grok and more in one window.",
   "author": "dingli",
