@@ -419,5 +419,120 @@ export class InputManager {
       })()
     `
   }
+
+  /**
+   * 生成模拟粘贴事件的脚本（用于粘贴图片）
+   * 这个脚本会聚焦输入框，准备接收粘贴事件
+   */
+  getSimulatePasteScript(): string {
+    const selectors = JSON.stringify(this.siteConfig.textareaSelectors)
+
+    return `
+      (function() {
+        const selectors = ${selectors};
+        
+        function isElementVisible(element) {
+          const style = window.getComputedStyle(element);
+          const rect = element.getBoundingClientRect();
+          return style.display !== 'none' && 
+                 style.visibility !== 'hidden' && 
+                 style.opacity !== '0' &&
+                 rect.width > 0 && 
+                 rect.height > 0;
+        }
+        
+        function isValidTextInput(element) {
+          if (!element) return false;
+          const isEditable = element.contentEditable === 'true' || 
+                            element.tagName.toLowerCase() === 'textarea';
+          const isNotReadonly = !element.readOnly && !element.disabled;
+          return isEditable && isNotReadonly;
+        }
+        
+        function isInChatHistory(element) {
+          let parent = element.parentElement;
+          while (parent) {
+            const className = parent.className || '';
+            const role = parent.getAttribute('role') || '';
+            if (className.includes('conversation') || 
+                className.includes('message') ||
+                role === 'article' ||
+                role === 'group') {
+              return true;
+            }
+            parent = parent.parentElement;
+          }
+          return false;
+        }
+        
+        function findTextarea() {
+          for (const selector of selectors) {
+            try {
+              const elements = document.querySelectorAll(selector);
+              for (const element of elements) {
+                if (isValidTextInput(element) && isElementVisible(element) && !isInChatHistory(element)) {
+                  return element;
+                }
+              }
+            } catch (e) {}
+          }
+          return null;
+        }
+        
+        const textarea = findTextarea();
+        if (!textarea) {
+          return { success: false, error: '未找到输入框' };
+        }
+        
+        // 聚焦输入框
+        textarea.focus();
+        
+        return { success: true, message: '已聚焦输入框，等待粘贴' };
+      })()
+    `
+  }
+
+  /**
+   * 生成点击发送按钮的脚本
+   */
+  getClickSendButtonScript(): string {
+    const buttonSelectors = JSON.stringify(this.siteConfig.sendButtonSelectors)
+
+    return `
+      (function() {
+        const buttonSelectors = ${buttonSelectors};
+        
+        function findSendButton() {
+          for (const selector of buttonSelectors) {
+            try {
+              const button = document.querySelector(selector);
+              if (button && button.offsetParent !== null) {
+                return button;
+              }
+            } catch (e) {}
+          }
+          
+          // 备用：按文本查找
+          const buttons = document.querySelectorAll('button');
+          for (const button of buttons) {
+            const btnText = button.textContent || button.innerText || '';
+            if ((btnText.includes('发送') || btnText.includes('Send') || btnText.includes('提交')) && 
+                button.offsetParent !== null) {
+              return button;
+            }
+          }
+          return null;
+        }
+        
+        const sendButton = findSendButton();
+        if (sendButton && !sendButton.disabled) {
+          sendButton.click();
+          return { success: true, message: '已点击发送按钮' };
+        } else {
+          return { success: false, error: '未找到可用的发送按钮' };
+        }
+      })()
+    `
+  }
 }
 

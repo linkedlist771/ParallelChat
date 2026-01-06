@@ -43,6 +43,14 @@ const isInputFocused = ref(false)
 const isSending = ref(false)
 const sendResults = ref<{ platformId: string; success: boolean; message: string }[]>([])
 
+// 图片附件状态
+interface ImageAttachment {
+  id: string
+  dataUrl: string
+  file: File
+}
+const attachedImages = ref<ImageAttachment[]>([])
+
 // 最大化状态
 const maximizedPanelIndex = ref<number | null>(null)
 const isMaximized = computed(() => maximizedPanelIndex.value !== null)
@@ -321,7 +329,9 @@ function handleRenameSession(id: string, name: string) {
 // 发送消息到所有可见的 WebView
 async function handleSend() {
   const message = inputMessage.value.trim()
-  if (!message || isSending.value) return
+  const hasImages = attachedImages.value.length > 0
+  
+  if ((!message && !hasImages) || isSending.value) return
   
   isSending.value = true
   sendResults.value = []
@@ -329,9 +339,9 @@ async function handleSend() {
   // 获取当前可见的平台ID列表
   const visiblePlatformIds = slotPlatforms.value.slice(0, slotCount.value)
   
-  console.log('Sending to platforms:', visiblePlatformIds)
+  console.log('Sending to platforms:', visiblePlatformIds, 'with images:', hasImages)
   
-  // 并行发送到所有 WebView
+  // 图片已经在粘贴时同步了，现在只需要输入文字并发送
   const promises = visiblePlatformIds.map(async (platformId, index) => {
     const siteConfig = getSiteConfigById(platformId)
     if (!siteConfig) {
@@ -347,15 +357,23 @@ async function handleSend() {
     
     try {
       const inputManager = new InputManager(siteConfig)
-      const script = inputManager.getSetTextAndSendScript(message)
       
-      const result = await webview.executeJavaScript(script)
-      console.log(`${platformId} result:`, result)
+      // 如果有文字，先输入文字（追加到已有内容后面）
+      if (message) {
+        const appendTextScript = generateAppendTextScript(message, siteConfig.textareaSelectors)
+        await webview.executeJavaScript(appendTextScript)
+        await new Promise(r => setTimeout(r, 100))
+      }
       
-      return { 
-        platformId, 
-        success: result?.success ?? false, 
-        message: result?.message || result?.error || '未知结果' 
+      // 点击发送按钮
+      await new Promise(r => setTimeout(r, 100))
+      const sendScript = inputManager.getClickSendButtonScript()
+      const sendResult = await webview.executeJavaScript(sendScript)
+      
+      return {
+        platformId,
+        success: sendResult?.success ?? false,
+        message: sendResult?.message || sendResult?.error || '已发送'
       }
     } catch (error: any) {
       console.error(`${platformId} error:`, error)
@@ -366,10 +384,11 @@ async function handleSend() {
   const results = await Promise.all(promises)
   sendResults.value = results
   
-  // 如果有成功的，清空输入框
+  // 如果有成功的，清空输入框和图片
   const hasSuccess = results.some(r => r.success)
   if (hasSuccess) {
     inputMessage.value = ''
+    attachedImages.value = []
   }
   
   // 3秒后清除结果提示
@@ -380,6 +399,357 @@ async function handleSend() {
   isSending.value = false
 }
 
+// 生成追加文字的脚本（不清空已有内容）
+function generateAppendTextScript(text: string, textareaSelectors: string[]): string {
+  const selectors = JSON.stringify(textareaSelectors)
+  const escapedText = JSON.stringify(text)
+  
+  return `
+    (function() {
+      const text = ${escapedText};
+      const selectors = ${selectors};
+      
+      function isElementVisible(element) {
+        const style = window.getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return style.display !== 'none' && 
+               style.visibility !== 'hidden' && 
+               style.opacity !== '0' &&
+               rect.width > 0 && 
+               rect.height > 0;
+      }
+      
+      function isValidTextInput(element) {
+        if (!element) return false;
+        const isEditable = element.contentEditable === 'true' || 
+                          element.tagName.toLowerCase() === 'textarea';
+        const isNotReadonly = !element.readOnly && !element.disabled;
+        return isEditable && isNotReadonly;
+      }
+      
+      function isInChatHistory(element) {
+        let parent = element.parentElement;
+        while (parent) {
+          const className = parent.className || '';
+          const role = parent.getAttribute('role') || '';
+          if (className.includes('conversation') || className.includes('message') ||
+              role === 'article' || role === 'group') {
+            return true;
+          }
+          parent = parent.parentElement;
+        }
+        return false;
+      }
+      
+      function findTextarea() {
+        for (const selector of selectors) {
+          try {
+            const elements = document.querySelectorAll(selector);
+            for (const element of elements) {
+              if (isValidTextInput(element) && isElementVisible(element) && !isInChatHistory(element)) {
+                return element;
+              }
+            }
+          } catch (e) {}
+        }
+        return null;
+      }
+      
+      function safeDispatchEvent(element, eventType) {
+        try {
+          const event = new Event(eventType, { bubbles: true, cancelable: true });
+          element.dispatchEvent(event);
+        } catch (e) {}
+      }
+      
+      const textarea = findTextarea();
+      if (!textarea) {
+        return { success: false, error: '未找到输入框' };
+      }
+      
+      textarea.focus();
+      
+      // 追加文字（不清空）
+      if (textarea.tagName.toLowerCase() === 'textarea') {
+        const currentValue = textarea.value || '';
+        textarea.value = currentValue + (currentValue ? ' ' : '') + text;
+        textarea.selectionStart = textarea.selectionEnd = textarea.value.length;
+      } else {
+        const currentText = textarea.textContent || '';
+        textarea.textContent = currentText + (currentText ? ' ' : '') + text;
+      }
+      
+      safeDispatchEvent(textarea, 'input');
+      safeDispatchEvent(textarea, 'change');
+      
+      return { success: true, message: '已追加文字' };
+    })()
+  `
+}
+
+// 生成在 WebView 中粘贴图片的脚本
+function generatePasteImageScript(imageDataUrl: string, textareaSelectors: string[], platformId: string): string {
+  const selectors = JSON.stringify(textareaSelectors)
+  const escapedDataUrl = JSON.stringify(imageDataUrl)
+  
+  return `
+    (async function() {
+      const selectors = ${selectors};
+      const imageDataUrl = ${escapedDataUrl};
+      const platformId = '${platformId}';
+      
+      function isElementVisible(element) {
+        const style = window.getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return style.display !== 'none' && 
+               style.visibility !== 'hidden' && 
+               style.opacity !== '0' &&
+               rect.width > 0 && 
+               rect.height > 0;
+      }
+      
+      function isValidTextInput(element) {
+        if (!element) return false;
+        const isEditable = element.contentEditable === 'true' || 
+                          element.tagName.toLowerCase() === 'textarea';
+        const isNotReadonly = !element.readOnly && !element.disabled;
+        return isEditable && isNotReadonly;
+      }
+      
+      function isInChatHistory(element) {
+        let parent = element.parentElement;
+        while (parent) {
+          const className = parent.className || '';
+          const role = parent.getAttribute('role') || '';
+          if (className.includes('conversation') || 
+              className.includes('message') ||
+              role === 'article' ||
+              role === 'group') {
+            return true;
+          }
+          parent = parent.parentElement;
+        }
+        return false;
+      }
+      
+      function findTextarea() {
+        for (const selector of selectors) {
+          try {
+            const elements = document.querySelectorAll(selector);
+            for (const element of elements) {
+              if (isValidTextInput(element) && isElementVisible(element) && !isInChatHistory(element)) {
+                return element;
+              }
+            }
+          } catch (e) {}
+        }
+        return null;
+      }
+      
+      // 查找文件上传 input
+      function findFileInput() {
+        // 查找隐藏的 file input
+        const fileInputs = document.querySelectorAll('input[type="file"]');
+        for (const input of fileInputs) {
+          if (input.accept && (input.accept.includes('image') || input.accept.includes('*'))) {
+            return input;
+          }
+        }
+        // 如果没找到带 accept 的，返回第一个
+        return fileInputs[0] || null;
+      }
+      
+      // 将 dataUrl 转换为 Blob
+      async function dataUrlToBlob(dataUrl) {
+        const response = await fetch(dataUrl);
+        return await response.blob();
+      }
+      
+      // 方法1: 通过 ClipboardEvent 粘贴（Gemini 等平台）
+      async function pasteViaClipboardEvent(textarea, blob, file) {
+        textarea.focus();
+        await new Promise(r => setTimeout(r, 50));
+        
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        
+        const pasteEvent = new ClipboardEvent('paste', {
+          bubbles: true,
+          cancelable: true,
+          clipboardData: dataTransfer
+        });
+        
+        textarea.dispatchEvent(pasteEvent);
+        
+        // 也在 document 上派发一次
+        if (!pasteEvent.defaultPrevented) {
+          document.dispatchEvent(new ClipboardEvent('paste', {
+            bubbles: true,
+            cancelable: true,
+            clipboardData: dataTransfer
+          }));
+        }
+        
+        return { success: true, message: '已通过粘贴事件发送图片' };
+      }
+      
+      // 方法2: 通过 drop 事件（一些平台支持拖拽）
+      async function pasteViaDrop(textarea, blob, file) {
+        textarea.focus();
+        await new Promise(r => setTimeout(r, 50));
+        
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        
+        // 模拟拖拽事件序列
+        const dragEnterEvent = new DragEvent('dragenter', {
+          bubbles: true,
+          cancelable: true,
+          dataTransfer: dataTransfer
+        });
+        
+        const dragOverEvent = new DragEvent('dragover', {
+          bubbles: true,
+          cancelable: true,
+          dataTransfer: dataTransfer
+        });
+        
+        const dropEvent = new DragEvent('drop', {
+          bubbles: true,
+          cancelable: true,
+          dataTransfer: dataTransfer
+        });
+        
+        textarea.dispatchEvent(dragEnterEvent);
+        textarea.dispatchEvent(dragOverEvent);
+        textarea.dispatchEvent(dropEvent);
+        
+        return { success: true, message: '已通过拖拽事件发送图片' };
+      }
+      
+      // 方法3: 通过 file input（ChatGPT、Claude 等平台）
+      async function pasteViaFileInput(file) {
+        const fileInput = findFileInput();
+        if (!fileInput) {
+          return { success: false, error: '未找到文件上传入口' };
+        }
+        
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        fileInput.files = dataTransfer.files;
+        
+        // 触发 change 事件
+        const changeEvent = new Event('change', { bubbles: true });
+        fileInput.dispatchEvent(changeEvent);
+        
+        // 也触发 input 事件
+        const inputEvent = new Event('input', { bubbles: true });
+        fileInput.dispatchEvent(inputEvent);
+        
+        return { success: true, message: '已通过文件上传发送图片' };
+      }
+      
+      // 方法4: 点击上传按钮后注入文件（备用方案）
+      async function findAndClickUploadButton() {
+        // 常见的上传按钮选择器
+        const uploadSelectors = [
+          'button[aria-label*="Attach"]',
+          'button[aria-label*="attach"]',
+          'button[aria-label*="Upload"]',
+          'button[aria-label*="upload"]',
+          'button[aria-label*="Image"]',
+          'button[aria-label*="image"]',
+          'button[aria-label*="File"]',
+          'button[aria-label*="file"]',
+          'button[aria-label*="添加"]',
+          'button[aria-label*="上传"]',
+          'button[data-testid*="attach"]',
+          'button[data-testid*="upload"]',
+          '[data-testid="attachment-button"]',
+          '.upload-button',
+          '.attach-button'
+        ];
+        
+        for (const selector of uploadSelectors) {
+          try {
+            const btn = document.querySelector(selector);
+            if (btn && btn.offsetParent !== null) {
+              return btn;
+            }
+          } catch (e) {}
+        }
+        
+        // 查找包含上传图标的按钮
+        const buttons = document.querySelectorAll('button');
+        for (const btn of buttons) {
+          if (btn.offsetParent !== null) {
+            const svg = btn.querySelector('svg');
+            if (svg) {
+              const svgContent = svg.innerHTML.toLowerCase();
+              if (svgContent.includes('path') && 
+                  (svgContent.includes('attach') || svgContent.includes('clip') || svgContent.includes('upload'))) {
+                return btn;
+              }
+            }
+          }
+        }
+        
+        return null;
+      }
+      
+      try {
+        const textarea = findTextarea();
+        if (!textarea) {
+          return { success: false, error: '未找到输入框' };
+        }
+        
+        // 转换图片数据
+        const blob = await dataUrlToBlob(imageDataUrl);
+        const file = new File([blob], 'pasted-image.png', { type: blob.type || 'image/png' });
+        
+        let result;
+        
+        // 根据不同平台选择不同的策略
+        if (platformId === 'chatgpt') {
+          // ChatGPT: 优先尝试 file input，然后是 paste 事件
+          result = await pasteViaFileInput(file);
+          if (!result.success) {
+            result = await pasteViaClipboardEvent(textarea, blob, file);
+          }
+          if (!result.success) {
+            result = await pasteViaDrop(textarea, blob, file);
+          }
+        } else if (platformId === 'claude') {
+          // Claude: 优先尝试 file input，然后是 drop 事件
+          result = await pasteViaFileInput(file);
+          if (!result.success) {
+            result = await pasteViaDrop(textarea, blob, file);
+          }
+          if (!result.success) {
+            result = await pasteViaClipboardEvent(textarea, blob, file);
+          }
+        } else if (platformId === 'gemini') {
+          // Gemini: 优先使用 paste 事件（已经工作）
+          result = await pasteViaClipboardEvent(textarea, blob, file);
+        } else {
+          // 其他平台: 依次尝试所有方法
+          result = await pasteViaClipboardEvent(textarea, blob, file);
+          if (!result.success) {
+            result = await pasteViaFileInput(file);
+          }
+          if (!result.success) {
+            result = await pasteViaDrop(textarea, blob, file);
+          }
+        }
+        
+        return result;
+      } catch (e) {
+        return { success: false, error: e.message || '粘贴图片失败' };
+      }
+    })()
+  `
+}
+
 // 处理键盘事件
 function handleKeyDown(event: KeyboardEvent) {
   if (event.key === 'Enter' && !event.shiftKey) {
@@ -387,6 +757,93 @@ function handleKeyDown(event: KeyboardEvent) {
     handleSend()
   }
 }
+
+// 处理粘贴事件 - 检测图片
+function handlePaste(event: ClipboardEvent) {
+  const items = event.clipboardData?.items
+  if (!items) return
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i]
+    if (item.type.startsWith('image/')) {
+      event.preventDefault()
+      const file = item.getAsFile()
+      if (file) {
+        addImageAttachment(file)
+      }
+      break
+    }
+  }
+}
+
+// 添加图片附件
+function addImageAttachment(file: File) {
+  const reader = new FileReader()
+  reader.onload = async (e) => {
+    const dataUrl = e.target?.result as string
+    if (dataUrl) {
+      const imgId = `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      attachedImages.value.push({
+        id: imgId,
+        dataUrl,
+        file
+      })
+      
+      // 立即同步粘贴图片到所有平台
+      await syncImageToAllPlatforms(dataUrl)
+    }
+  }
+  reader.readAsDataURL(file)
+}
+
+// 同步图片到所有可见平台
+async function syncImageToAllPlatforms(imageDataUrl: string) {
+  const visiblePlatformIds = slotPlatforms.value.slice(0, slotCount.value)
+  
+  console.log('Syncing image to platforms:', visiblePlatformIds)
+  
+  // 并行粘贴到所有平台
+  const promises = visiblePlatformIds.map(async (platformId, index) => {
+    const siteConfig = getSiteConfigById(platformId)
+    if (!siteConfig) return
+    
+    const webviewId = `webview-${platformId}-${index}`
+    const webview = document.getElementById(webviewId) as any
+    
+    if (!webview) return
+    
+    try {
+      const inputManager = new InputManager(siteConfig)
+      
+      // 先聚焦输入框
+      const focusScript = inputManager.getSimulatePasteScript()
+      await webview.executeJavaScript(focusScript)
+      await new Promise(r => setTimeout(r, 100))
+      
+      // 粘贴图片
+      const pasteImageScript = generatePasteImageScript(imageDataUrl, siteConfig.textareaSelectors, platformId)
+      const result = await webview.executeJavaScript(pasteImageScript)
+      console.log(`${platformId} paste result:`, result)
+    } catch (error) {
+      console.error(`${platformId} paste error:`, error)
+    }
+  })
+  
+  await Promise.all(promises)
+}
+
+// 移除图片附件
+function removeImageAttachment(id: string) {
+  const index = attachedImages.value.findIndex(img => img.id === id)
+  if (index !== -1) {
+    attachedImages.value.splice(index, 1)
+  }
+}
+
+// 检查是否可以发送（有文字或图片）
+const canSend = computed(() => {
+  return (inputMessage.value.trim() || attachedImages.value.length > 0) && !isSending.value
+})
 
 // 计算自定义布局的面板样式
 function getCustomPanelStyle(index: number) {
@@ -519,21 +976,43 @@ function getCustomPanelStyle(index: number) {
           <span class="result-message">{{ result.message }}</span>
         </div>
       </div>
+
+      <!-- 图片预览区 -->
+      <div v-if="attachedImages.length > 0" class="image-preview-container">
+        <div 
+          v-for="img in attachedImages" 
+          :key="img.id" 
+          class="image-preview-item"
+        >
+          <img :src="img.dataUrl" alt="附件图片" class="preview-image" />
+          <button 
+            class="remove-image-btn" 
+            @click="removeImageAttachment(img.id)"
+            title="移除图片"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      </div>
       
       <div :class="['input-wrapper', { focused: isInputFocused, sending: isSending }]">
         <textarea
           v-model="inputMessage"
           class="message-input"
-          placeholder="输入消息，同时发送给所有 AI..."
+          placeholder="输入消息，可粘贴图片，同时发送给所有 AI..."
           rows="1"
           :disabled="isSending"
           @focus="isInputFocused = true"
           @blur="isInputFocused = false"
           @keydown="handleKeyDown"
+          @paste="handlePaste"
         ></textarea>
         <button 
-          :class="['send-btn', { active: inputMessage.trim() && !isSending }]"
-          :disabled="!inputMessage.trim() || isSending"
+          :class="['send-btn', { active: canSend }]"
+          :disabled="!canSend"
           @click="handleSend"
         >
           <svg v-if="!isSending" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -544,7 +1023,7 @@ function getCustomPanelStyle(index: number) {
         </button>
       </div>
       <div class="input-hint">
-        按 Enter 发送，Shift + Enter 换行
+        按 Enter 发送，Shift + Enter 换行 | 支持粘贴图片 (Ctrl/Cmd + V)
       </div>
     </div>
   </div>
@@ -687,6 +1166,55 @@ function getCustomPanelStyle(index: number) {
   background-color: #1a1a1a;
   border-top: 1px solid #333;
   flex-shrink: 0;
+}
+
+/* 图片预览区 */
+.image-preview-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px;
+  background-color: #2a2a2a;
+  border-radius: 12px;
+}
+
+.image-preview-item {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #3a3a3a;
+}
+
+.preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-image-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.remove-image-btn:hover {
+  background-color: #ef4444;
+  transform: scale(1.1);
 }
 
 .input-wrapper {
